@@ -190,6 +190,19 @@ public class DriveUtils {
         }
 
     }
+    public void deleteFile(com.google.api.services.drive.model.File file){
+        try {
+            final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+            Drive service = new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
+                    .setApplicationName(APPLICATION_NAME)
+                    .build();
+            String fileId = file.getId();
+            service.files().delete(fileId).execute();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }
 
     public void testDriveUtils() throws IOException, GeneralSecurityException {
         try {

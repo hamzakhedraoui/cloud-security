@@ -68,8 +68,6 @@ public class ECCUtils {
     public Map<Integer,byte[]> splitKey(String key) {
         final byte[] secret = key.getBytes(StandardCharsets.UTF_8);
         final Map<Integer, byte[]> parts = scheme.split(secret);
-        //final byte[] recovered = scheme.join(parts);
-        //System.out.println(new String(recovered, StandardCharsets.UTF_8));
         return  parts;
     }
     public String joinKey(Map<Integer,byte[]> parts){
