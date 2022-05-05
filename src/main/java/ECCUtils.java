@@ -108,7 +108,7 @@ public class ECCUtils {
                 new IESEngineGCM(
                         new ECDHBasicAgreement(),
                         new KDF2BytesGenerator(new SHA256Digest()),
-                        new AESGCMBlockCipher()), 16);
+                        new GCMBlockCipher()), 16);
 
         cipher.engineInit(Cipher.ENCRYPT_MODE, publicKey, params, new SecureRandom());
 
@@ -133,7 +133,7 @@ public class ECCUtils {
                 new IESEngineGCM(
                         new ECDHBasicAgreement(),
                         new KDF2BytesGenerator(new SHA256Digest()),
-                        new AESGCMBlockCipher()), 16);
+                        new GCMBlockCipher()), 16);
 
         cipher.engineInit(Cipher.ENCRYPT_MODE, publicKey, params, new SecureRandom());
 
@@ -156,7 +156,7 @@ public class ECCUtils {
                 new IESEngineGCM(
                         new ECDHBasicAgreement(),
                         new KDF2BytesGenerator(new SHA256Digest()),
-                        new AESGCMBlockCipher()), 16);
+                        new GCMBlockCipher()), 16);
 
         cipher.engineInit(Cipher.DECRYPT_MODE, privateKey, params, new SecureRandom());
 

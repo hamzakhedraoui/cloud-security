@@ -1,3 +1,5 @@
+import com.google.common.io.BaseEncoding;
+
 import javax.crypto.SecretKey;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -34,12 +36,16 @@ public class GUI extends JFrame {
     private JMenu ECCmenu;
     private JMenu AESmenu;
     private JMenu mainMenu;
+    private JMenu enc_dec;
     private JMenuItem exportECCKeys;
     private JMenuItem importECCKeys;
     private JMenuItem exportAES;
     private JMenuItem importAES;
     private JMenuItem deleteKeys;
     private JMenuItem clearLog;
+    private JMenuItem encrypteAndUpload;
+    private JMenuItem downloadAndDecrypt;
+    private JMenuItem secondMenu;
     private ECCUtils eccUtils = new ECCUtils();
     private String[] ECCkeys = {"", ""};
     private String AESKey = "";
@@ -50,6 +56,7 @@ public class GUI extends JFrame {
     HashMap<Integer, byte[]> parts = new HashMap<Integer, byte[]>();
     private final DriveUtils driveUtils = new DriveUtils();
     com.google.api.services.drive.model.File[] filesArray;
+    private ApiClient api = new ApiClient();
 
     public GUI() {
         super("cloud encryption");
@@ -94,7 +101,11 @@ public class GUI extends JFrame {
         menuBar = new JMenuBar();
         ECCmenu = new JMenu("KEYS");
         AESmenu = new JMenu("AES");
+        enc_dec = new JMenu("Tools");
         mainMenu = new JMenu("ECC");
+
+        encrypteAndUpload = new JMenuItem("encrypt and upload");
+        downloadAndDecrypt = new JMenuItem("download and decrypt");
         exportECCKeys = new JMenuItem("Export ECC Keys");
         importECCKeys = new JMenuItem("Import ECC Key");
         exportAES = new JMenuItem("Export AES key");
@@ -107,9 +118,13 @@ public class GUI extends JFrame {
         AESmenu.add(importAES);
         AESmenu.add(exportAES);
         mainMenu.add(AESmenu);
-        menuBar.add(mainMenu);
+        enc_dec.add(encrypteAndUpload);
+        enc_dec.add(downloadAndDecrypt);
         mainMenu.add(deleteKeys);
         mainMenu.add(clearLog);
+        menuBar.add(mainMenu);
+        menuBar.add(enc_dec);
+
 
         checkEnabelaty();
 
@@ -169,9 +184,8 @@ public class GUI extends JFrame {
                         addLog("private key : " + ECCkeys[1]);
                         Map<Integer, byte[]> parts = eccUtils.splitKey(ECCkeys[1]);
                         database.updatePart1(Base64.getEncoder().encodeToString(parts.get(1)));
-                        database.updatePart2(Base64.getEncoder().encodeToString(parts.get(2)));
-                        //database.updatePart3(Base64.getEncoder().encodeToString(parts.get(3)));
-                        //database.updatePart4(Base64.getEncoder().encodeToString(parts.get(4)));
+                        api.saveEccPart(BaseEncoding.base64Url().encode(parts.get(2)));
+
                         driveUtils.uploadParts(Base64.getEncoder().encodeToString(parts.get(3)), Base64.getEncoder().encodeToString(parts.get(4)), workingDir);
                         for (Map.Entry<Integer, byte[]> entry : parts.entrySet()) {
                             byte[] part = Base64.getDecoder().decode(Base64.getEncoder().encodeToString(entry.getValue()));
@@ -179,7 +193,7 @@ public class GUI extends JFrame {
                                     ", Value = " + Base64.getEncoder().encodeToString(part));
                         }
                         addLog("ECC Keys generated and 2 parts have been uploaded to the cloud...");
-                        addLog("AESkey has been imported");
+                        //addLog("AESkey has been imported");
                         checkEnabelaty();
                     } else
                         addLog("no file has been picked...");
@@ -246,8 +260,7 @@ public class GUI extends JFrame {
                 database.updatePubkey("");
                 database.updateAes("");
                 database.updatePart1("");
-                database.updatePart2("");
-
+                api.saveEccPart("");
                 java.util.List<com.google.api.services.drive.model.File> files = driveUtils.showFiles();
                 if (files == null || files.isEmpty()) {
                     System.out.println("No files found.");
@@ -262,6 +275,88 @@ public class GUI extends JFrame {
                             driveUtils.deleteFile(file);
                         }
                     }
+                }
+                checkEnabelaty();
+            }
+        });
+        encrypteAndUpload.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                String fromFile = ""; // from resources folder
+                String toFile = "";
+                //String todecFile = File.separator + "home" + File.separator + "sophesrex" + File.separator + "Public" + File.separator + "readme.txt";
+                try {
+                    JFileChooser j = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
+                    j.setAcceptAllFileFilterUsed(false);
+                    j.setDialogTitle("Select a .txt file");
+                    FileNameExtensionFilter restrict = new FileNameExtensionFilter("Only .txt files", "txt");
+                    j.addChoosableFileFilter(restrict);
+                    int r = j.showOpenDialog(null);
+                    if (r == JFileChooser.APPROVE_OPTION) {
+                        //encrypt
+                        fromFile = j.getSelectedFile().getAbsolutePath();
+                        String[] splitPath = fromFile.split(File.separator);
+                        toFile = workingDir + File.separator + "Enc-" + splitPath[splitPath.length - 1];
+                        EncryptorAesGcm.encryptFile(fromFile, toFile, plainAES);
+
+                        //upload
+                        byte[] fileContent = Files.readAllBytes(Paths.get(toFile));
+                        String sha3_256 = ShaUtils.bytesToHex(ShaUtils.digest(fileContent));
+                        String[] splitPath2 = toFile.split(File.separator);
+                        String fileId = driveUtils.uploadFile(toFile);
+                        api.check(splitPath2[splitPath2.length-1],sha3_256);
+                        if (fileId.equals("")) {
+                            addLog("Problem uploading try again...");
+                        } else {
+                            addLog("upload finished the file ID in the Drive : " + fileId);
+                        }
+                        addLog("file has been encrypted successfully.");
+                    } else
+                        addLog("no file has been picked...");
+                    //EncryptorAesGcm.decryptFile(toFile, todecFile, AESKey);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                checkEnabelaty();
+            }
+        });
+        downloadAndDecrypt.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                String ID = JOptionPane.showInputDialog("Provide file Number to download:");
+                int number = -1;
+                try {
+                    if (filesArray == null) {
+                        java.util.List<com.google.api.services.drive.model.File> files = driveUtils.showFiles();
+                        if (files == null || files.isEmpty()) {
+                            System.out.println("No files found.");
+                            addLog("No files found");
+                        } else {
+                            System.out.println("Files:");
+                            filesArray = new com.google.api.services.drive.model.File[files.size()];
+                            int counter = 0;
+                            for (com.google.api.services.drive.model.File file : files) {
+                                filesArray[counter] = file;
+                                //addLog(String.format("#%s-- %s (%s)\n",counter+1 ,file.getName(), file.getId()));
+                            }
+                        }
+                    }
+                    number = Integer.parseInt(ID);
+                    driveUtils.downloadFile(filesArray[number - 1], workingDir);
+                    //decryption
+                    String fromFile = workingDir+ File.separator +filesArray[number-1].getName();
+                    String[] splitPath = fromFile.split("/");
+                    if (splitPath[splitPath.length - 1].contains("Enc-")) {
+                        String toFile = workingDir + File.separator + "Dec-" + splitPath[splitPath.length - 1].split("-")[1];
+                        EncryptorAesGcm.decryptFile(fromFile, toFile, plainAES);
+                        addLog("file has been decrypted successfully.");
+                    } else {
+                        addLog("this file is not encrypted...");
+                    }
+
+                    addLog("Download completed Successfully.");
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(null, "you need provide a valid number.");
                 }
                 checkEnabelaty();
             }
@@ -294,9 +389,8 @@ public class GUI extends JFrame {
                 addLog("private key : " + ECCkeys[1]);
                 Map<Integer, byte[]> parts = eccUtils.splitKey(ECCkeys[1]);
                 database.updatePart1(Base64.getEncoder().encodeToString(parts.get(1)));
-                database.updatePart2(Base64.getEncoder().encodeToString(parts.get(2)));
-                //database.updatePart3(Base64.getEncoder().encodeToString(parts.get(3)));
-                //database.updatePart4(Base64.getEncoder().encodeToString(parts.get(4)));
+                //api.saveEccPart(Base64.getEncoder().encodeToString(parts.get(2)));
+                api.saveEccPart(BaseEncoding.base64Url().encode(parts.get(2)));
                 driveUtils.uploadParts(Base64.getEncoder().encodeToString(parts.get(3)), Base64.getEncoder().encodeToString(parts.get(4)), workingDir);
                 for (Map.Entry<Integer, byte[]> entry : parts.entrySet()) {
                     byte[] part = Base64.getDecoder().decode(Base64.getEncoder().encodeToString(entry.getValue()));
@@ -400,7 +494,11 @@ public class GUI extends JFrame {
                     int r = j.showOpenDialog(null);
                     if (r == JFileChooser.APPROVE_OPTION) {
                         String filePath = j.getSelectedFile().getAbsolutePath();
+                        byte[] fileContent = Files.readAllBytes(Paths.get(filePath));
+                        String sha3_256 = ShaUtils.bytesToHex(ShaUtils.digest(fileContent));
+                        String[] splitPath = filePath.split(File.separator);
                         String fileId = driveUtils.uploadFile(filePath);
+                        api.check(splitPath[splitPath.length-1],sha3_256);
                         if (fileId.equals("")) {
                             addLog("Problem uploading try again...");
                         } else {
@@ -593,7 +691,8 @@ public class GUI extends JFrame {
                 byte[] part2Content = Files.readAllBytes(Paths.get(workingDir + File.separator + "part2.txt"));
                 AESKey = info.get("aes");
                 parts.put(1, Base64.getDecoder().decode(info.get("part1")));
-                parts.put(2, Base64.getDecoder().decode(info.get("part2")));
+                parts.put(2, api.getEccPart());
+                //parts.put(2,api.getEccPart().getBytes(StandardCharsets.UTF_8));
                 parts.put(3, part1Content);
                 parts.put(4, part2Content);
                 ECCkeys[0] = info.get("pubkey");

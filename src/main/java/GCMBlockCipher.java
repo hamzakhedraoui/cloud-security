@@ -2,20 +2,19 @@ import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.modes.GCMBlockCipher;
 
 import javax.crypto.NoSuchPaddingException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 
-public class AESGCMBlockCipher extends BufferedBlockCipher {
+public class GCMBlockCipher extends BufferedBlockCipher {
 
-    private GCMBlockCipher internalCipher;
+    private org.bouncycastle.crypto.modes.GCMBlockCipher internalCipher;
 
 
-    public AESGCMBlockCipher()
+    public GCMBlockCipher()
             throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException {
-        this.internalCipher = new GCMBlockCipher(new AESEngine());
+        this.internalCipher = new org.bouncycastle.crypto.modes.GCMBlockCipher(new AESEngine());
     }
 
 
