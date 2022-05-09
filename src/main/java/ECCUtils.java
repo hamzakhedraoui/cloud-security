@@ -84,7 +84,7 @@ public class ECCUtils {
     public String textEncrypt(String plaintext, String peerPublicKey) throws Exception {
 
         byte[] publicKey = Base64.decode(peerPublicKey);
-        return encryptDec(plaintext, publicKey);
+        return encrypt(plaintext, publicKey);
 
     }
 
@@ -95,7 +95,7 @@ public class ECCUtils {
 
     }
 
-    private String encryptDec(String plaintext, byte[] publicKeyBytes) throws Exception {
+    private String encrypt(String plaintext, byte[] publicKeyBytes) throws Exception {
 
         java.security.spec.X509EncodedKeySpec encodedKeySpec = new X509EncodedKeySpec(publicKeyBytes);
 
@@ -104,7 +104,7 @@ public class ECCUtils {
         byte[] inputBytes = plaintext.getBytes();
 
         org.bouncycastle.jce.spec.IESParameterSpec params = new IESParameterSpec(null, null, 256, 256, null);
-        IESCipherGCM cipher = new IESCipherGCM(
+        IESCipher cipher = new IESCipher(
                 new IESEngineGCM(
                         new ECDHBasicAgreement(),
                         new KDF2BytesGenerator(new SHA256Digest()),
@@ -116,7 +116,7 @@ public class ECCUtils {
         return Base64.toBase64String(cipherResult);
     }
 
-    private String encrypt(String plaintext, byte[] publicKeyBytes, String curveName) throws Exception {
+    private String encryptDec(String plaintext, byte[] publicKeyBytes, String curveName) throws Exception {
 
         org.bouncycastle.jce.spec.ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(curveName);
         KeyFactory keyFactory = KeyFactory.getInstance("EC", new BouncyCastleProvider());
@@ -129,7 +129,7 @@ public class ECCUtils {
         byte[] inputBytes = plaintext.getBytes();
 
         org.bouncycastle.jce.spec.IESParameterSpec params = new IESParameterSpec(null, null, 256, 256, null);
-        IESCipherGCM cipher = new IESCipherGCM(
+        IESCipher cipher = new IESCipher(
                 new IESEngineGCM(
                         new ECDHBasicAgreement(),
                         new KDF2BytesGenerator(new SHA256Digest()),
@@ -152,7 +152,7 @@ public class ECCUtils {
         byte[] inputBytes = Base64.decode(ciphertext);
 
         IESParameterSpec params = new IESParameterSpec(null, null, 256, 256, null);
-        IESCipherGCM cipher = new IESCipherGCM(
+        IESCipher cipher = new IESCipher(
                 new IESEngineGCM(
                         new ECDHBasicAgreement(),
                         new KDF2BytesGenerator(new SHA256Digest()),

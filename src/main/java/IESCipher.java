@@ -1,4 +1,3 @@
-
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -14,15 +13,8 @@ import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
-import org.bouncycastle.crypto.params.ECKeyParameters;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.params.IESWithCipherParameters;
-import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.crypto.params.*;
 import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.IESUtil;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
@@ -31,29 +23,14 @@ import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.interfaces.IESKey;
 import org.bouncycastle.jce.spec.IESParameterSpec;
 import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.util.encoders.Hex;
 
+import javax.crypto.*;
 import java.io.ByteArrayOutputStream;
-import java.security.AlgorithmParameters;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.CipherSpi;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.ShortBufferException;
 
-
-public class IESCipherGCM extends CipherSpi {
+public class IESCipher extends CipherSpi {
     private final JcaJceHelper helper = new BCJcaJceHelper();
 
     private int ivLength;
@@ -67,12 +44,12 @@ public class IESCipherGCM extends CipherSpi {
     private boolean dhaesMode = false;
     private AsymmetricKeyParameter otherKeyParameter = null;
 
-    public IESCipherGCM(IESEngineGCM engine) {
+    public IESCipher(IESEngineGCM engine) {
         this.engine = engine;
         this.ivLength = 0;
     }
 
-    public IESCipherGCM(IESEngineGCM engine, int ivLength) {
+    public IESCipher(IESEngineGCM engine, int ivLength) {
         this.engine = engine;
         this.ivLength = ivLength;
     }
@@ -396,7 +373,7 @@ public class IESCipherGCM extends CipherSpi {
      */
 
     static public class ECIES
-            extends IESCipher {
+            extends org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher {
         public ECIES() {
             super(new IESEngine(new ECDHBasicAgreement(),
                     new KDF2BytesGenerator(new SHA1Digest()),
@@ -405,7 +382,7 @@ public class IESCipherGCM extends CipherSpi {
     }
 
     static public class ECIESwithCipher
-            extends IESCipher {
+            extends org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher {
         public ECIESwithCipher(BlockCipher cipher) {
             super(new IESEngine(new ECDHBasicAgreement(),
                     new KDF2BytesGenerator(new SHA1Digest()),
@@ -422,14 +399,14 @@ public class IESCipherGCM extends CipherSpi {
     }
 
     static public class ECIESwithDESedeCBC
-            extends IESCipher.ECIESwithCipher {
+            extends org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher.ECIESwithCipher {
         public ECIESwithDESedeCBC() {
             super(new CBCBlockCipher(new DESedeEngine()), 8);
         }
     }
 
     static public class ECIESwithAESCBC
-            extends IESCipher.ECIESwithCipher {
+            extends org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher.ECIESwithCipher {
         public ECIESwithAESCBC() {
             super(new CBCBlockCipher(new AESEngine()), 16);
         }

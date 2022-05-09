@@ -123,9 +123,6 @@ public class ApiClient {
         }
         return "no";
     }
-    public void save(String part){
-
-    }
 
     public byte[] getEccPart() {
         try {

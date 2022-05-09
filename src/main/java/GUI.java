@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GUI extends JFrame {
-    private Database database = new Database();
+
     private JScrollPane scrollBar;
     private JButton generateAESKey;
     private JButton generateECCKeypair;
@@ -52,7 +52,7 @@ public class GUI extends JFrame {
     private String plainAES = "";
     private String logs = "";
     private String workingDir = "";
-    private final ECCUtils eccutils = new ECCUtils();
+    private Database database = new Database();
     HashMap<Integer, byte[]> parts = new HashMap<Integer, byte[]>();
     private final DriveUtils driveUtils = new DriveUtils();
     com.google.api.services.drive.model.File[] filesArray;

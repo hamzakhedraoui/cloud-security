@@ -5,9 +5,9 @@ import java.sql.Statement;
 import java.util.HashMap;
 
 public class Database {
-    String dbURL = "jdbc:mysql://localhost:3306/cloud";
-    String username = "newuser";
-    String password = "password";
+    private String dbURL = "jdbc:mysql://localhost:3306/cloud";
+    private String username = "newuser";
+    private String password = "password";
 
     public Database() {
     }
