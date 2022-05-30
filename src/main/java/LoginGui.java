@@ -35,6 +35,11 @@ public class LoginGui extends JFrame {
                     System.out.println("frame disposed");
                     GUI gui = new GUI();
                     gui.show(true);
+                }else{
+                    userName.setText("");
+                    password.setText("");
+                    JOptionPane.showMessageDialog( null, "user name or password is incorrect." , "Error as Title",
+                            JOptionPane.ERROR_MESSAGE );
                 }
             }
         });
